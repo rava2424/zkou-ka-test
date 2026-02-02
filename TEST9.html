@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Test DPI – finální verze</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f0f2f5;
+    display:flex;
+    justify-content:center;
+    padding:40px;
+}
+.card{
+    background:white;
+    width:800px;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 4px 20px rgba(0,0,0,.1);
+}
+h1{color:#1a73e8;margin-top:0;}
+.option{
+    display:block;
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:2px solid #e8eaed;
+    border-radius:6px;
+    background:white;
+    cursor:pointer;
+    text-align:left;
+}
+.option:hover{background:#f8f9fa;}
+.correct{background:#d4edda;border-color:#28a745;font-weight:bold;}
+.incorrect{background:#f8d7da;border-color:#dc3545;}
+textarea{
+    width:100%;
+    min-height:80px;
+    margin-top:15px;
+    padding:10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+.explanation{
+    margin-top:15px;
+    padding:12px;
+    background:#e8f0fe;
+    border-left:5px solid #1a73e8;
+    display:none;
+}
+.nav{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+}
+button{
+    padding:10px 22px;
+    border:none;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+}
+.next{background:#1a73e8;color:white;}
+.prev{background:#9aa0a6;color:white;}
+.prev.active{background:#1a73e8;}
+button:disabled{opacity:.5;}
+.hidden{display:none;}
+.result-box{
+    background:#f8f9fa;
+    padding:20px;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<!-- TEST -->
+<div id="quiz">
+    <h1 id="title"></h1>
+    <p id="questionText"></p>
+
+    <div id="options"></div>
+
+    <textarea id="steps" placeholder="Zapiš postup výpočtu..."></textarea>
+
+    <div id="explanation" class="explanation"></div>
+
+    <div class="nav">
+        <button id="prevBtn" class="prev" onclick="prev()">Zpět</button>
+        <button class="next" onclick="next()">Další</button>
+    </div>
+</div>
+
+<!-- VÝSLEDEK -->
+<div id="result" class="hidden">
+    <h1>Výsledek testu</h1>
+    <div class="result-box" id="resultText"></div>
+    <p id="saveStatus" style="margin-top:15px;color:#555"></p>
+</div>
+
+</div>
+
+<script>
+/* ====== TVOJE APPS SCRIPT URL ====== */
+const GOOGLE_SHEET_URL =
+"https://script.google.com/macros/s/AKfycbzICdvvioWLJngLaYtmPnyqMrPdU5jViFlOnaoHhvmkXytNLaKgRL4nTmbgRym5Eaib/exec";
+
+/* ====== OTÁZKY ====== */
+const questions = [
+ {
+  q:"Fotografie má šířku 3000 px. Jak široká bude při tisku 300 DPI?",
+  options:["10 cm","25,4 cm","76,2 cm"],
+  correct:1,
+  expl:"(3000 / 300) × 2,54 = 25,4 cm"
+ },
+ {
+  q:"Chceme tisk 10 cm při 300 DPI. Kolik pixelů musí mít obrázek?",
+  options:["1181 px","3000 px","118 px"],
+  correct:0,
+  expl:"(10 / 2,54) × 300 ≈ 1181 px"
+ }
+];
+
+let index = 0;
+let answers = [];
+let stepsArr = [];
+
+/* ====== RENDER ====== */
+function render(){
+ document.getElementById("title").innerText =
+   `Otázka ${index+1} / ${questions.length}`;
+ document.getElementById("questionText").innerText =
+   questions[index].q;
+
+ const optBox = document.getElementById("options");
+ optBox.innerHTML="";
+
+ questions[index].options.forEach((t,i)=>{
+   const b=document.createElement("button");
+   b.className="option";
+   b.innerText=t;
+
+   if(answers[index]!=null){
+     if(i===questions[index].correct) b.classList.add("correct");
+     else if(i===answers[index]) b.classList.add("incorrect");
+     b.disabled=true;
+   }
+
+   b.onclick=()=>{
+     stepsArr[index] = document.getElementById("steps").value;
+     answers[index]=i;
+     render();
+   };
+
+   optBox.appendChild(b);
+ });
+
+ document.getElementById("steps").value = stepsArr[index] || "";
+
+ const expl=document.getElementById("explanation");
+ if(answers[index]!=null){
+   expl.innerText="Správné řešení: "+questions[index].expl;
+   expl.style.display="block";
+ } else {
+   expl.style.display="none";
+ }
+
+ const prev=document.getElementById("prevBtn");
+ prev.disabled = index===0;
+ prev.classList.toggle("active", index>0);
+}
+
+/* ====== NAVIGACE ====== */
+function next(){
+ if(answers[index]==null){
+   alert("Vyber odpověď");
+   return;
+ }
+ stepsArr[index]=document.getElementById("steps").value;
+
+ if(index < questions.length-1){
+   index++;
+   render();
+ } else {
+   showResult();
+ }
+}
+
+function prev(){
+ stepsArr[index]=document.getElementById("steps").value;
+ index--;
+ render();
+}
+
+/* ====== VÝSLEDEK + ULOŽENÍ ====== */
+function showResult(){
+ document.getElementById("quiz").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+
+ let correctCount = 0;
+ questions.forEach((q,i)=>{
+   if(answers[i] === q.correct) correctCount++;
+ });
+
+ const percent = Math.round((correctCount / questions.length) * 100);
+
+ document.getElementById("resultText").innerHTML =
+   `<p><strong>Správně:</strong> ${correctCount} z ${questions.length}</p>
+    <p><strong>Úspěšnost:</strong> ${percent} %</p>`;
+
+ let stepsText = "";
+ stepsArr.forEach((s,i)=>{
+   stepsText += `Otázka ${i+1}:\n${s}\n\n`;
+ });
+
+ const statusEl = document.getElementById("saveStatus");
+ statusEl.innerText = "Ukládám výsledek…";
+
+ fetch(GOOGLE_SHEET_URL,{
+   method:"POST",
+   headers:{ "Content-Type":"application/json" },
+   body:JSON.stringify({
+     name:"testovací žák",
+     percent:percent,
+     correct:correctCount,
+     steps:stepsText
+   })
+ })
+ .then(res => res.json())
+ .then(data => {
+   if(data.status === "OK"){
+     statusEl.innerText = "✅ Výsledek byl úspěšně uložen.";
+   } else {
+     statusEl.innerText = "❌ Chyba ukládání: " + data.message;
+   }
+ })
+ .catch(err => {
+   statusEl.innerText = "❌ Chyba spojení: " + err;
+ });
+}
+
+render();
+</script>
+
+</body>
+</html>
