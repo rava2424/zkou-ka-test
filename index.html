@@ -1,115 +1,89 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<title>Test DPI – finální verze</title>
-
-<style>
-body{
-    font-family: Arial, sans-serif;
-    background:#f0f2f5;
-    display:flex;
-    justify-content:center;
-    padding:40px;
-}
-.card{
-    background:white;
-    width:800px;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 4px 20px rgba(0,0,0,.1);
-}
-h1{color:#1a73e8;margin-top:0;}
-.option{
-    display:block;
-    width:100%;
-    padding:12px;
-    margin:10px 0;
-    border:2px solid #e8eaed;
-    border-radius:6px;
-    background:white;
-    cursor:pointer;
-    text-align:left;
-}
-.option:hover{background:#f8f9fa;}
-.correct{background:#d4edda;border-color:#28a745;font-weight:bold;}
-.incorrect{background:#f8d7da;border-color:#dc3545;}
-textarea{
-    width:100%;
-    min-height:80px;
-    margin-top:15px;
-    padding:10px;
-    border-radius:6px;
-    border:1px solid #ccc;
-}
-.explanation{
-    margin-top:15px;
-    padding:12px;
-    background:#e8f0fe;
-    border-left:5px solid #1a73e8;
-    display:none;
-}
-.nav{
-    display:flex;
-    justify-content:space-between;
-    margin-top:20px;
-}
-button{
-    padding:10px 22px;
-    border:none;
-    border-radius:6px;
-    font-weight:bold;
-    cursor:pointer;
-}
-.next{background:#1a73e8;color:white;}
-.prev{background:#9aa0a6;color:white;}
-.prev.active{background:#1a73e8;}
-button:disabled{opacity:.5;}
-.hidden{display:none;}
-.result-box{
-    background:#f8f9fa;
-    padding:20px;
-    border-radius:10px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test DPI – Digitální obraz a tisk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        .glass { background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid rgba(0,0,0,0.05); }
+        .option-btn { transition: all 0.2s ease; border: 2px solid #e5e7eb; }
+        .option-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; }
+        .correct { background-color: #d1fae5 !important; border-color: #10b981 !important; color: #065f46; font-weight: bold; }
+        .incorrect { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b; }
+    </style>
 </head>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-<body>
+    <div class="glass w-full max-w-2xl p-6 md:p-10">
+        
+        <!-- ÚVODNÍ OBRAZOVKA -->
+        <div id="start-screen" class="text-center">
+            <div class="mb-6 flex justify-center">
+                <div class="p-6 bg-blue-50 rounded-full text-blue-500">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </div>
+            </div>
+            <h1 class="text-3xl font-black mb-4 uppercase tracking-tighter">Test: DPI a rozlišení</h1>
+            <p class="text-gray-500 mb-8">Než začneš, zadej prosím své jméno pro uložení výsledků.</p>
+            
+            <input type="text" id="studentName" class="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-blue-500 focus:outline-none mb-6 text-center font-bold" placeholder="Tvé jméno a příjmení">
+            
+            <button onclick="startQuiz()" class="w-full py-4 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">
+                Spustit test
+            </button>
+        </div>
 
-<div class="card">
+        <!-- TESTOVACÍ ROZHRANÍ (skryté na začátku) -->
+        <div id="quiz" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h1 id="title" class="text-sm font-black uppercase tracking-widest text-blue-600"></h1>
+                <div id="progress-bar" class="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
+                    <div id="progress-fill" class="h-full bg-blue-500 transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
 
-<!-- TEST -->
-<div id="quiz">
-    <h1 id="title"></h1>
-    <p id="questionText"></p>
+            <p id="questionText" class="text-xl md:text-2xl font-bold mb-8 leading-tight"></p>
 
-    <div id="options"></div>
+            <div id="options" class="space-y-3 mb-8"></div>
 
-    <textarea id="steps" placeholder="Zapiš postup výpočtu..."></textarea>
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Váš postup výpočtu:</label>
+                <textarea id="steps" class="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-blue-500 focus:outline-none transition-all min-h-[100px] text-sm" placeholder="Zapište postup..."></textarea>
+            </div>
 
-    <div id="explanation" class="explanation"></div>
+            <div id="explanation" class="hidden mb-8 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-xl text-blue-800 text-sm italic"></div>
 
-    <div class="nav">
-        <button id="prevBtn" class="prev" onclick="prev()">Zpět</button>
-        <button class="next" onclick="next()">Další</button>
+            <div id="errorMsg" class="hidden text-red-500 text-sm font-bold mb-4 animate-pulse text-center">⚠ Vyberte odpověď!</div>
+
+            <div class="flex justify-between items-center pt-6 border-t border-gray-100">
+                <button id="prevBtn" onclick="prev()" class="px-6 py-3 rounded-xl font-bold text-gray-400 hover:text-gray-600 disabled:opacity-30 transition-all flex items-center gap-2">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                    Zpět
+                </button>
+                <button onclick="next()" class="px-10 py-3 rounded-xl bg-blue-600 text-white font-black uppercase tracking-widest text-xs hover:bg-blue-700 shadow-lg shadow-blue-200 active:scale-95 transition-all">
+                    Další
+                </button>
+            </div>
+        </div>
+
+        <!-- VÝSLEDEK -->
+        <div id="result" class="hidden text-center">
+            <div id="resultIcon" class="mb-8 flex justify-center"></div>
+            <h1 class="text-3xl font-black mb-2 uppercase tracking-tighter">Test dokončen</h1>
+            <div id="resultText" class="text-gray-600 mb-8"></div>
+            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 mb-8">
+                <p id="saveStatus" class="text-sm font-bold text-gray-500 italic"></p>
+            </div>
+            <button onclick="window.location.reload()" class="text-blue-600 font-bold hover:underline">Zkusit znovu</button>
+        </div>
     </div>
-</div>
-
-<!-- VÝSLEDEK -->
-<div id="result" class="hidden">
-    <h1>Výsledek testu</h1>
-    <div class="result-box" id="resultText"></div>
-    <p id="saveStatus" style="margin-top:15px;color:#555"></p>
-</div>
-
-</div>
 
 <script>
-/* ====== TVOJE APPS SCRIPT URL ====== */
-const GOOGLE_SHEET_URL =
-"https://script.google.com/macros/s/AKfycbzICdvvioWLJngLaYtmPnyqMrPdU5jViFlOnaoHhvmkXytNLaKgRL4nTmbgRym5Eaib/exec";
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbzICdvvioWLJngLaYtmPnyqMrPdU5jViFlOnaoHhvmkXytNLaKgRL4nTmbgRym5Eaib/exec";
 
-/* ====== OTÁZKY ====== */
 const questions = [
  {
   q:"Fotografie má šířku 3000 px. Jak široká bude při tisku 300 DPI?",
@@ -128,123 +102,98 @@ const questions = [
 let index = 0;
 let answers = [];
 let stepsArr = [];
+let studentName = "";
 
-/* ====== RENDER ====== */
+function startQuiz() {
+    const nameInput = document.getElementById("studentName");
+    if (nameInput.value.trim().length < 3) {
+        alert("Zadej prosím celé jméno.");
+        return;
+    }
+    studentName = nameInput.value;
+    document.getElementById("start-screen").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+    render();
+}
+
 function render(){
- document.getElementById("title").innerText =
-   `Otázka ${index+1} / ${questions.length}`;
- document.getElementById("questionText").innerText =
-   questions[index].q;
+    document.getElementById("title").innerText = `Otázka ${index+1} / ${questions.length}`;
+    document.getElementById("progress-fill").style.width = ((index + 1) / questions.length * 100) + "%";
+    document.getElementById("questionText").innerText = questions[index].q;
+    document.getElementById("errorMsg").classList.add("hidden");
 
- const optBox = document.getElementById("options");
- optBox.innerHTML="";
+    const optBox = document.getElementById("options");
+    optBox.innerHTML = "";
 
- questions[index].options.forEach((t,i)=>{
-   const b=document.createElement("button");
-   b.className="option";
-   b.innerText=t;
+    questions[index].options.forEach((t, i) => {
+        const b = document.createElement("button");
+        b.className = "option-btn w-full p-4 rounded-xl text-left font-semibold";
+        b.innerText = t;
+        if(answers[index] != null){
+            if(i === questions[index].correct) b.classList.add("correct");
+            else if(i === answers[index]) b.classList.add("incorrect");
+            b.disabled = true;
+        }
+        b.onclick = () => {
+            stepsArr[index] = document.getElementById("steps").value;
+            answers[index] = i;
+            render();
+        };
+        optBox.appendChild(b);
+    });
 
-   if(answers[index]!=null){
-     if(i===questions[index].correct) b.classList.add("correct");
-     else if(i===answers[index]) b.classList.add("incorrect");
-     b.disabled=true;
-   }
-
-   b.onclick=()=>{
-     stepsArr[index] = document.getElementById("steps").value;
-     answers[index]=i;
-     render();
-   };
-
-   optBox.appendChild(b);
- });
-
- document.getElementById("steps").value = stepsArr[index] || "";
-
- const expl=document.getElementById("explanation");
- if(answers[index]!=null){
-   expl.innerText="Správné řešení: "+questions[index].expl;
-   expl.style.display="block";
- } else {
-   expl.style.display="none";
- }
-
- const prev=document.getElementById("prevBtn");
- prev.disabled = index===0;
- prev.classList.toggle("active", index>0);
+    document.getElementById("steps").value = stepsArr[index] || "";
+    const expl = document.getElementById("explanation");
+    if(answers[index] != null){
+        expl.innerHTML = `<strong>Správné řešení:</strong> ${questions[index].expl}`;
+        expl.classList.remove("hidden");
+    } else { expl.classList.add("hidden"); }
+    document.getElementById("prevBtn").disabled = index === 0;
 }
 
-/* ====== NAVIGACE ====== */
 function next(){
- if(answers[index]==null){
-   alert("Vyber odpověď");
-   return;
- }
- stepsArr[index]=document.getElementById("steps").value;
-
- if(index < questions.length-1){
-   index++;
-   render();
- } else {
-   showResult();
- }
+    if(answers[index] == null){
+        document.getElementById("errorMsg").classList.remove("hidden");
+        return;
+    }
+    stepsArr[index] = document.getElementById("steps").value;
+    if(index < questions.length - 1){ index++; render(); } 
+    else { showResult(); }
 }
 
-function prev(){
- stepsArr[index]=document.getElementById("steps").value;
- index--;
- render();
-}
+function prev(){ if(index > 0){ stepsArr[index] = document.getElementById("steps").value; index--; render(); } }
 
-/* ====== VÝSLEDEK + ULOŽENÍ ====== */
 function showResult(){
- document.getElementById("quiz").classList.add("hidden");
- document.getElementById("result").classList.remove("hidden");
+    document.getElementById("quiz").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+    let correctCount = 0;
+    questions.forEach((q, i) => { if(answers[i] === q.correct) correctCount++; });
+    const percent = Math.round((correctCount / questions.length) * 100);
 
- let correctCount = 0;
- questions.forEach((q,i)=>{
-   if(answers[i] === q.correct) correctCount++;
- });
+    document.getElementById("resultText").innerHTML = `<div class="text-4xl font-black text-blue-600 mb-2">${percent}%</div><p>Žák: <strong>${studentName}</strong><br>Správně: ${correctCount} z ${questions.length}</p>`;
 
- const percent = Math.round((correctCount / questions.length) * 100);
+    let stepsText = "";
+    stepsArr.forEach((s, i) => { stepsText += `Q${i+1}: ${s || "-"}\n`; });
 
- document.getElementById("resultText").innerHTML =
-   `<p><strong>Správně:</strong> ${correctCount} z ${questions.length}</p>
-    <p><strong>Úspěšnost:</strong> ${percent} %</p>`;
+    const statusEl = document.getElementById("saveStatus");
+    statusEl.innerText = "Ukládám do tabulky...";
 
- let stepsText = "";
- stepsArr.forEach((s,i)=>{
-   stepsText += `Otázka ${i+1}:\n${s}\n\n`;
- });
-
- const statusEl = document.getElementById("saveStatus");
- statusEl.innerText = "Ukládám výsledek…";
-
- fetch(GOOGLE_SHEET_URL,{
-   method:"POST",
-   headers:{ "Content-Type":"application/json" },
-   body:JSON.stringify({
-     name:"testovací žák",
-     percent:percent,
-     correct:correctCount,
-     steps:stepsText
-   })
- })
- .then(res => res.json())
- .then(data => {
-   if(data.status === "OK"){
-     statusEl.innerText = "✅ Výsledek byl úspěšně uložen.";
-   } else {
-     statusEl.innerText = "❌ Chyba ukládání: " + data.message;
-   }
- })
- .catch(err => {
-   statusEl.innerText = "❌ Chyba spojení: " + err;
- });
+    fetch(GOOGLE_SHEET_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+            name: studentName,
+            percent: percent,
+            correct: correctCount,
+            steps: stepsText
+        })
+    }).then(() => {
+        statusEl.innerText = "✅ Výsledek byl úspěšně uložen.";
+        statusEl.className = "text-sm font-bold text-emerald-600";
+    }).catch(() => {
+        statusEl.innerText = "❌ Chyba odesílání.";
+    });
 }
-
-render();
 </script>
-
 </body>
 </html>
